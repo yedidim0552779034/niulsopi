@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת ניהול משימות</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --secondary: #2ecc71;
+            --secondary-dark: #27ae60;
+            --dark: #34495e;
+            --darker: #2c3e50;
+            --light: #ecf0f1;
+            --lighter: #f9f9f9;
+            --danger: #e74c3c;
+            --danger-light: rgba(231, 76, 60, 0.15); /* Light red for background */
+            --warning: #f39c12;
+            --info: #9b59b6;
+            --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            --border-radius: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--light);
+            direction: rtl;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 300px;
+            background-color: var(--dark);
+            color: white;
+            padding: 20px;
+            flex-shrink: 0;
+            overflow-y: auto;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+        }
+
+        .sidebar h2 {
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 10px;
+        }
+
+        .sidebar-section {
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: var(--border-radius);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+        }
+
+        /* Fix for dropdown menu background */
+        .form-group select option {
+            background-color: var(--darker);
+            color: white;
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .datetime-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .datetime-container input {
+            flex: 1;
+        }
+
+        button { /* General button reset/base */
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: var(--border-radius);
+            border: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            background: none; /* Make buttons transparent by default unless class overrides */
+            color: inherit; /* Inherit color unless class overrides */
+        }
+
+        /* Standard color buttons (still used for modal footers, etc.) */
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+        .btn-secondary {
+            background-color: var(--secondary);
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: var(--secondary-dark);
+        }
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+        .btn-danger:hover {
+            opacity: 0.9;
+        }
+
+        /* Small button modifier (can be used with icon buttons too) */
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        /* Icon Button Style */
+        .icon-btn {
+            background: none;
+            border: none;
+            padding: 2px 5px; /* Adjust padding around icon */
+            font-size: 16px;  /* Adjust emoji size */
+            line-height: 1;   /* Prevent extra vertical space */
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+            vertical-align: middle; /* Align icon nicely */
+            color: inherit; /* Inherit color from parent */
+        }
+        .icon-btn:hover {
+            opacity: 1;
+        }
+        .icon-btn.delete-icon:hover {
+            color: var(--danger);
+        }
+
+
+        /* Status Management */
+        .status-list {
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .status-item .icon-btn {
+             color: var(--light); /* Match sidebar text color */
+        }
+         .status-item .icon-btn:hover {
+             color: var(--danger); /* Red on hover */
+         }
+
+
+        .status-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+
+        .status-name-display {
+            display: flex;
+            align-items: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Tabs */
+        .tabs {
+            background-color: var(--dark);
+            padding: 10px 20px 0;
+            display: flex;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: thin;
+        }
+
+        .tabs::-webkit-scrollbar {
+            height: 5px;
+        }
+
+        .tabs::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.7);
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            margin-left: 5px;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .tab.active {
+            background-color: var(--light);
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        .tab-actions {
+            margin-right: 10px;
+            display: flex;
+            gap: 5px;
+        }
+
+        /* Tab/Column action buttons */
+        .tab-actions button,
+        .column-actions button {
+            padding: 0;
+            background: none;
+            border: none;
+            font-size: 14px;
+            opacity: 0.7;
+            color: inherit;
+            cursor: pointer;
+        }
+        .tab-actions button:hover,
+        .column-actions button:hover {
+            opacity: 1;
+        }
+
+
+        .add-board-btn {
+            margin-right: auto;
+            margin-left: 10px;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .add-board-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Boards Container */
+        .boards-container {
+            flex-grow: 1;
+            display: flex;
+            overflow-x: auto;
+            padding: 20px;
+            align-items: flex-start; /* Align columns to top */
+            background-color: var(--light);
+        }
+
+        /* Column */
+        .column {
+            min-width: 280px;
+            max-width: 320px;
+            background-color: var(--lighter);
+            border-radius: var(--border-radius);
+            margin-left: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            max-height: calc(100vh - 120px);
+            transition: opacity 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .column.over { }
+
+        .column-header {
+            padding: 15px;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: grab;
+        }
+
+        .column-title {
+            font-size: 16px;
+             overflow: hidden;
+             text-overflow: ellipsis;
+             white-space: nowrap;
+             margin-left: 10px;
+        }
+
+        .column-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+
+        .tasks-container {
+            padding: 10px;
+            flex-grow: 1;
+            overflow-y: auto;
+            min-height: 100px;
+            transition: background-color 0.2s ease, border 0.2s ease;
+        }
+
+        .tasks-container.drag-over {
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+
+        /* Task Card */
+        .task-card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: var(--shadow);
+            cursor: grab;
+            transition: all 0.2s ease;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            position: relative;
+        }
+
+        .task-card:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .task-card.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+            cursor: grabbing;
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .task-title-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+             flex-grow: 1;
+             margin-left: 10px;
+             overflow: hidden;
+        }
+
+        .task-title {
+            font-weight: 600;
+            font-size: 16px;
+             overflow: hidden;
+             text-overflow: ellipsis;
+             white-space: nowrap;
+        }
+
+        .task-status {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .task-description {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 10px;
+            white-space: pre-line;
+            word-break: break-word;
+        }
+
+        .task-due {
+            font-size: 12px;
+            color: #777;
+            margin-bottom: 5px;
+        }
+
+        .task-countdown {
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .countdown-expired {
+            color: var(--danger);
+            font-weight: 500;
+        }
+
+        .task-actions {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+         .task-actions .icon-btn {
+             color: #555;
+         }
+         .task-actions .icon-btn:hover {
+              color: var(--primary);
+         }
+         .task-actions .icon-btn.delete-icon:hover {
+              color: var(--danger);
+         }
+         .task-actions .icon-btn.move-icon:hover {
+              color: var(--info);
+         }
+
+        /* --- MODIFIED: Overdue Task Style --- */
+        .due-alarm {
+            background-color: var(--danger-light); /* Use light red background */
+            /* Removed border-left: 4px solid var(--danger); */
+        }
+        /* Optional: Make text slightly darker on red background if needed */
+        .due-alarm .task-description,
+        .due-alarm .task-due {
+            /* color: #444; */ /* Example: slightly darker text */
+        }
+        /* Ensure countdown expired text remains clearly red */
+         .due-alarm .countdown-expired {
+             color: var(--danger);
+             font-weight: bold; /* Make it bolder */
+         }
+         /* --- END MODIFICATION --- */
+
+
+        /* Link Button */
+        .task-link-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: linear-gradient(135deg, var(--info), #8e44ad);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 13px;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+            width: auto;
+        }
+
+        .task-link-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+            background: linear-gradient(135deg, #8e44ad, var(--info));
+        }
+
+        .task-link-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Add Column Button */
+        .add-column {
+            min-width: 280px;
+            max-width: 320px;
+            height: 50px;
+            background-color: rgba(52, 152, 219, 0.1);
+            border: 2px dashed var(--primary);
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--primary);
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin-left: 20px;
+            flex-shrink: 0;
+        }
+        .add-column span {
+            margin-left: 8px;
+            font-size: 1.2em;
+        }
+
+        .add-column:hover {
+            background-color: rgba(52, 152, 219, 0.2);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0s 0.3s linear;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal {
+            background-color: white;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            transform: translateY(20px) scale(0.95);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            line-height: 1;
+            padding: 0 5px;
+            cursor: pointer;
+            color: #777;
+            opacity: 0.8;
+        }
+        .modal-close:hover {
+            opacity: 1;
+            color: #333;
+        }
+
+
+        .modal-body {
+            padding: 20px;
+             max-height: 60vh;
+             overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .modal .form-group input,
+        .modal .form-group textarea,
+        .modal .form-group select {
+            border: 1px solid #ccc;
+            background-color: #fdfdfd;
+            color: #333;
+        }
+        .modal .form-group select option {
+             background-color: white;
+             color: #333;
+         }
+
+
+        /* Drag and Drop Placeholders */
+        .column-placeholder {
+            border: 2px dashed #ccc;
+            background-color: rgba(0, 0, 0, 0.03);
+            min-width: 280px;
+            max-width: 320px;
+            margin-left: 20px;
+            border-radius: var(--border-radius);
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+
+        .task-placeholder {
+            border: 2px dashed #ccc;
+            background-color: rgba(0, 0, 0, 0.03);
+            margin-bottom: 10px;
+            border-radius: var(--border-radius);
+            box-sizing: border-box;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                 height: auto;
+                 min-height: 100vh;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                max-height: none;
+                overflow-y: visible;
+            }
+
+            .main-content {
+                height: auto;
+                overflow: visible;
+            }
+
+            .tabs {
+                 padding: 10px 10px 0;
+            }
+
+            .boards-container {
+                 flex-wrap: nowrap;
+                 overflow-x: auto;
+                 min-height: 300px;
+                 padding: 15px;
+                 scroll-snap-type: x mandatory;
+                 gap: 15px;
+            }
+             .boards-container > * {
+                  scroll-snap-align: start;
+             }
+
+
+             .column {
+                 max-height: none;
+                 height: auto;
+                 margin-left: 0;
+                 width: 80vw;
+                 min-width: 280px;
+                 max-width: none;
+                 scroll-snap-stop: always;
+             }
+
+             .tasks-container {
+                  max-height: 60vh;
+                  min-height: 50px;
+             }
+
+            .datetime-container {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+             .modal {
+                 width: 95%;
+             }
+
+             .task-actions {
+                 gap: 5px;
+             }
+             .icon-btn {
+                 font-size: 18px;
+             }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2>ניהול משימות</h2>
+
+            <!-- Add Task Form -->
+            <div class="sidebar-section">
+                <h3>הוספת משימה חדשה</h3>
+                <form id="add-task-form">
+                    <div class="form-group">
+                        <label for="task-title">כותרת</label>
+                        <input type="text" id="task-title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="task-description">תיאור (ניתן להוסיף קישור URL)</label>
+                        <textarea id="task-description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="task-status">סטטוס</label>
+                        <select id="task-status" required>
+                            <option value="" disabled selected>-- בחר סטטוס --</option>
+                            <!-- Will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>תאריך ושעת יעד (אופציונלי)</label>
+                        <div class="datetime-container">
+                            <input type="date" id="task-due-date">
+                            <input type="time" id="task-due-time">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%;">הוסף משימה</button>
+                </form>
+            </div>
+
+            <!-- Status Management -->
+            <div class="sidebar-section">
+                <h3>ניהול סטטוסים</h3>
+                <div class="status-list" id="status-list">
+                    <!-- Will be populated dynamically -->
+                </div>
+                <form id="add-status-form">
+                    <div class="form-group">
+                        <label for="status-name">שם הסטטוס</label>
+                        <input type="text" id="status-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="status-color">צבע</label>
+                        <input type="color" id="status-color" value="#3498db">
+                    </div>
+                    <button type="submit" class="btn-secondary" style="width: 100%;">הוסף סטטוס</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Tabs -->
+            <div class="tabs" id="board-tabs">
+                <!-- Will be populated dynamically -->
+                <button class="add-board-btn" id="add-board-btn" title="הוסף פרויקט חדש">+</button>
+            </div>
+
+            <!-- Boards Container -->
+            <div class="boards-container" id="boards-container">
+                <!-- Will be populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Column Modal -->
+    <div class="modal-overlay" id="add-column-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">הוספת עמודה חדשה</h3>
+                <button class="modal-close" title="סגור">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-column-form">
+                    <div class="form-group">
+                        <label for="column-title">כותרת העמודה</label>
+                        <input type="text" id="column-title" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary modal-close">ביטול</button>
+                <button class="btn-primary" id="add-column-submit">הוסף</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Board Modal -->
+    <div class="modal-overlay" id="add-board-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">הוספת פרויקט חדש</h3>
+                <button class="modal-close" title="סגור">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-board-form">
+                    <div class="form-group">
+                        <label for="board-title">שם הפרויקט</label>
+                        <input type="text" id="board-title" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary modal-close">ביטול</button>
+                <button class="btn-primary" id="add-board-submit">הוסף</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Task Modal -->
+    <div class="modal-overlay" id="edit-task-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">עריכת משימה</h3>
+                <button class="modal-close" title="סגור">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-task-form">
+                    <input type="hidden" id="edit-task-id">
+                    <input type="hidden" id="edit-task-column-id">
+                    <div class="form-group">
+                        <label for="edit-task-title">כותרת</label>
+                        <input type="text" id="edit-task-title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-task-description">תיאור (ניתן להוסיף קישור URL)</label>
+                        <textarea id="edit-task-description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-task-status">סטטוס</label>
+                        <select id="edit-task-status" required>
+                            <!-- Will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>תאריך ושעת יעד (אופציונלי)</label>
+                        <div class="datetime-container">
+                            <input type="date" id="edit-task-due-date">
+                            <input type="time" id="edit-task-due-time">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary modal-close">ביטול</button>
+                <button class="btn-primary" id="edit-task-submit">שמור שינויים</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Move Task Modal -->
+    <div class="modal-overlay" id="move-task-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">העברת משימה לפרויקט אחר</h3>
+                <button class="modal-close" title="סגור">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="move-task-form">
+                    <input type="hidden" id="move-task-id">
+                    <input type="hidden" id="move-task-source-board-id">
+                    <input type="hidden" id="move-task-source-column-id">
+
+                    <div class="form-group">
+                        <label for="move-task-board">בחר פרויקט יעד</label>
+                        <select id="move-task-board" required>
+                            <!-- Will be populated dynamically -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="move-task-column">בחר עמודה ביעד</label>
+                        <select id="move-task-column" required disabled>
+                            <!-- Will be populated dynamically -->
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary modal-close">ביטול</button>
+                <button class="btn-primary" id="move-task-submit">העבר</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // קוד ה-JavaScript נשאר זהה לקוד הקודם
+        // השינוי היחיד הוא ב-CSS, וה-JavaScript כבר מטפל בהוספה/הסרה
+        // של הקלאס due-alarm שמפעיל את סגנון הרקע האדום
+
+        // App State
+        let appState = { boards: [], customStatuses: [], activeBoardId: null };
+        // DOM Elements
+        const boardTabs = document.getElementById('board-tabs'); const boardsContainer = document.getElementById('boards-container'); const addBoardBtn = document.getElementById('add-board-btn'); const addBoardModal = document.getElementById('add-board-modal'); const addBoardForm = document.getElementById('add-board-form'); const addBoardSubmit = document.getElementById('add-board-submit'); const addColumnModal = document.getElementById('add-column-modal'); const addColumnForm = document.getElementById('add-column-form'); const addColumnSubmit = document.getElementById('add-column-submit'); const addTaskForm = document.getElementById('add-task-form'); const taskStatusSelect = document.getElementById('task-status'); const editTaskModal = document.getElementById('edit-task-modal'); const editTaskForm = document.getElementById('edit-task-form'); const editTaskSubmit = document.getElementById('edit-task-submit'); const editTaskStatus = document.getElementById('edit-task-status'); const statusList = document.getElementById('status-list'); const addStatusForm = document.getElementById('add-status-form'); const moveTaskModal = document.getElementById('move-task-modal'); const moveTaskForm = document.getElementById('move-task-form'); const moveTaskBoardSelect = document.getElementById('move-task-board'); const moveTaskColumnSelect = document.getElementById('move-task-column'); const moveTaskSubmit = document.getElementById('move-task-submit');
+        // Drag & Drop State Variables
+        let draggedColumn = null; let columnPlaceholder = null; let draggedTask = null; let taskPlaceholder = null;
+        // Utility Functions
+        function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
+        function formatDate(dateString, timeString) { if (!dateString) return null; const date = new Date(dateString); if (timeString) { const [hours, minutes] = timeString.split(':'); date.setHours(hours, minutes); } return date; }
+        function formatDateForDisplay(date) { if (!date) return ''; const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }; try { return new Date(date).toLocaleDateString('he-IL', options); } catch (e) { return 'תאריך לא תקין'; } }
+        function calculateCountdown(dueDate) { if (!dueDate) return null; const now = new Date(); const due = new Date(dueDate); const diff = due - now; if (diff <= 0) { return { expired: true, text: "זמן היעד עבר" }; } const days = Math.floor(diff / (1000 * 60 * 60 * 24)); const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)); let text = "נותר: "; if (days > 0) text += `${days} ימים, `; if (hours > 0 || days > 0) text += `${hours} שעות, `; text += `${minutes} דקות`; return { expired: false, text }; }
+        function getContrastColor(hexColor) { hexColor = hexColor.replace('#', ''); const r = parseInt(hexColor.substr(0, 2), 16); const g = parseInt(hexColor.substr(2, 2), 16); const b = parseInt(hexColor.substr(4, 2), 16); const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255; return luminance > 0.5 ? '#000000' : '#ffffff'; }
+        function extractUrl(text) { if (!text) return null; const urlRegex = /(https?:\/\/[^\s]+)/g; const match = text.match(urlRegex); return match ? match[0] : null; }
+        // State Management
+        function saveState() { localStorage.setItem('taskManagerState', JSON.stringify(appState)); }
+        function loadState() { try { const savedState = localStorage.getItem('taskManagerState'); if (savedState) { appState = JSON.parse(savedState); if (!Array.isArray(appState.boards)) { appState.boards = []; } if (!Array.isArray(appState.customStatuses)) { appState.customStatuses = []; } if (appState.boards.length === 0) { initializeAppState(); } else { appState.boards.forEach(board => { if (!Array.isArray(board.columns)) { board.columns = []; } board.columns.forEach(column => { if (!Array.isArray(column.tasks)) { column.tasks = []; } }); }); const boardExists = appState.boards.some(board => board.id === appState.activeBoardId); if (!boardExists && appState.boards.length > 0) { appState.activeBoardId = appState.boards[0].id; } else if (!appState.activeBoardId && appState.boards.length > 0) { appState.activeBoardId = appState.boards[0].id; } } } else { initializeAppState(); } } catch (error) { console.error('Error loading state:', error); initializeAppState(); } }
+        function initializeAppState() { appState.customStatuses = [ { id: generateId(), name: 'לביצוע', color: '#3498db' }, { id: generateId(), name: 'בתהליך', color: '#f39c12' }, { id: generateId(), name: 'הושלם', color: '#2ecc71' }, { id: generateId(), name: 'דחוף', color: '#e74c3c' } ]; const boardId = generateId(); const todoColumnId = generateId(); const inProgressColumnId = generateId(); const doneColumnId = generateId(); appState.boards = [ { id: boardId, title: 'פרויקט לדוגמה', columns: [ { id: todoColumnId, title: 'לביצוע', tasks: [ { id: generateId(), title: 'משימה לדוגמה 1', description: 'זוהי משימה לדוגמה. ניתן לערוך או למחוק אותה.', statusId: appState.customStatuses[0].id, dueDate: new Date(Date.now() + 86400000 * 2).toISOString() } ] }, { id: inProgressColumnId, title: 'בתהליך', tasks: [ { id: generateId(), title: 'משימה לדוגמה 2', description: 'זוהי משימה בתהליך לדוגמה.\nhttps://example.com', statusId: appState.customStatuses[1].id, dueDate: new Date(Date.now() + 86400000).toISOString() } ] }, { id: doneColumnId, title: 'הושלם', tasks: [ { id: generateId(), title: 'משימה לדוגמה 3', description: 'זוהי משימה שהושלמה לדוגמה.', statusId: appState.customStatuses[2].id, dueDate: null } ] } ] } ]; appState.activeBoardId = boardId; saveState(); }
+        // Render Functions
+        function renderStatusOptions() { const selects = [taskStatusSelect, editTaskStatus]; selects.forEach(select => { const currentValue = select.value; const placeholder = select.querySelector('option[disabled]'); select.innerHTML = ''; if(placeholder) select.appendChild(placeholder); appState.customStatuses.forEach(status => { const option = document.createElement('option'); option.value = status.id; option.textContent = status.name; select.appendChild(option); }); if (currentValue) select.value = currentValue; }); }
+        function renderStatusList() { statusList.innerHTML = ''; appState.customStatuses.forEach(status => { const statusItem = document.createElement('div'); statusItem.className = 'status-item'; statusItem.dataset.statusId = status.id; const nameDisplay = document.createElement('div'); nameDisplay.className = 'status-name-display'; const colorDot = document.createElement('div'); colorDot.className = 'status-color'; colorDot.style.backgroundColor = status.color; const name = document.createElement('span'); name.textContent = status.name; nameDisplay.appendChild(colorDot); nameDisplay.appendChild(name); const deleteBtn = document.createElement('button'); deleteBtn.className = 'icon-btn delete-icon'; deleteBtn.innerHTML = '🗑️'; deleteBtn.title = `מחק סטטוס "${status.name}"`; deleteBtn.addEventListener('click', () => deleteStatus(status.id)); statusItem.appendChild(nameDisplay); statusItem.appendChild(deleteBtn); statusList.appendChild(statusItem); }); }
+        function renderBoardTabs() { const addBtnRef = document.getElementById('add-board-btn'); while (boardTabs.firstChild && boardTabs.firstChild !== addBtnRef) { boardTabs.removeChild(boardTabs.firstChild); } appState.boards.forEach(board => { const tab = document.createElement('div'); tab.className = `tab ${board.id === appState.activeBoardId ? 'active' : ''}`; tab.dataset.boardId = board.id; const title = document.createElement('span'); title.textContent = board.title; tab.appendChild(title); const actions = document.createElement('div'); actions.className = 'tab-actions'; const editBtn = document.createElement('button'); editBtn.innerHTML = '✏️'; editBtn.title = 'ערוך שם פרויקט'; editBtn.addEventListener('click', (e) => { e.stopPropagation(); editBoard(board.id); }); const deleteBtn = document.createElement('button'); deleteBtn.innerHTML = '🗑️'; deleteBtn.title = 'מחק פרויקט'; deleteBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteBoard(board.id); }); actions.appendChild(editBtn); actions.appendChild(deleteBtn); tab.appendChild(actions); tab.addEventListener('click', () => { setActiveBoard(board.id); }); if (addBtnRef) { boardTabs.insertBefore(tab, addBtnRef); } else { boardTabs.appendChild(tab); } }); }
+        function renderBoard() { boardsContainer.innerHTML = ''; const activeBoard = appState.boards.find(board => board.id === appState.activeBoardId); if (!activeBoard) { if (appState.boards.length > 0) { setActiveBoard(appState.boards[0].id); } else { boardsContainer.innerHTML = '<p style="color: var(--dark); margin: 20px;">אין פרויקטים. לחץ על "+" ליצירת פרויקט חדש.</p>'; } return; } activeBoard.columns.forEach(column => { const columnElement = createColumnElement(column); boardsContainer.appendChild(columnElement); }); const addColumnBtn = document.createElement('div'); addColumnBtn.className = 'add-column'; addColumnBtn.innerHTML = '<span>+</span> הוסף עמודה'; addColumnBtn.addEventListener('click', () => openAddColumnModal()); boardsContainer.appendChild(addColumnBtn); setupDragAndDrop(); }
+        function createColumnElement(column) { const columnElement = document.createElement('div'); columnElement.className = 'column'; columnElement.dataset.columnId = column.id; const header = document.createElement('div'); header.className = 'column-header'; header.draggable = true; const title = document.createElement('div'); title.className = 'column-title'; title.textContent = column.title; const actions = document.createElement('div'); actions.className = 'column-actions'; const editBtn = document.createElement('button'); editBtn.innerHTML = '✏️'; editBtn.title = 'ערוך שם עמודה'; editBtn.addEventListener('click', () => editColumn(column.id)); const deleteBtn = document.createElement('button'); deleteBtn.innerHTML = '🗑️'; deleteBtn.title = 'מחק עמודה'; deleteBtn.addEventListener('click', () => deleteColumn(column.id)); actions.appendChild(editBtn); actions.appendChild(deleteBtn); header.appendChild(title); header.appendChild(actions); const tasksContainer = document.createElement('div'); tasksContainer.className = 'tasks-container'; tasksContainer.dataset.columnId = column.id; if (column.tasks && Array.isArray(column.tasks)) { column.tasks.forEach(task => { const taskElement = createTaskElement(task); tasksContainer.appendChild(taskElement); }); } else { console.warn(`Column ${column.id} has invalid or missing tasks array.`); column.tasks = []; } columnElement.appendChild(header); columnElement.appendChild(tasksContainer); return columnElement; }
+        function createTaskElement(task) { const taskElement = document.createElement('div'); taskElement.className = 'task-card'; taskElement.dataset.taskId = task.id; taskElement.draggable = true; const isDue = task.dueDate && new Date(task.dueDate) < new Date(); if (isDue) { taskElement.classList.add('due-alarm'); } const header = document.createElement('div'); header.className = 'task-header'; const titleContainer = document.createElement('div'); titleContainer.className = 'task-title-container'; const status = appState.customStatuses.find(s => s.id === task.statusId); const statusBadge = document.createElement('div'); statusBadge.className = 'task-status'; if (status) { statusBadge.textContent = status.name; statusBadge.style.backgroundColor = status.color; statusBadge.style.color = getContrastColor(status.color); } else { statusBadge.textContent = 'לא ידוע'; statusBadge.style.backgroundColor = '#bdc3c7'; statusBadge.style.color = '#ffffff'; } titleContainer.appendChild(statusBadge); const title = document.createElement('div'); title.className = 'task-title'; title.textContent = task.title; titleContainer.appendChild(title); header.appendChild(titleContainer); taskElement.appendChild(header); if (task.description) { const description = document.createElement('div'); description.className = 'task-description'; description.textContent = task.description; taskElement.appendChild(description); const url = extractUrl(task.description); if (url) { const linkBtn = document.createElement('a'); linkBtn.href = url; linkBtn.target = "_blank"; linkBtn.rel = "noopener noreferrer"; linkBtn.className = 'task-link-btn'; linkBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>פתח קישור`; taskElement.appendChild(linkBtn); } } if (task.dueDate) { const dueDate = document.createElement('div'); dueDate.className = 'task-due'; dueDate.textContent = `יעד: ${formatDateForDisplay(task.dueDate)}`; taskElement.appendChild(dueDate); const countdown = calculateCountdown(task.dueDate); if (countdown) { const countdownElement = document.createElement('div'); countdownElement.className = `task-countdown ${countdown.expired ? 'countdown-expired' : ''}`; countdownElement.textContent = countdown.text; taskElement.appendChild(countdownElement); } } const actions = document.createElement('div'); actions.className = 'task-actions'; const moveBtn = document.createElement('button'); moveBtn.className = 'icon-btn move-icon'; moveBtn.innerHTML = '📤'; moveBtn.title = 'העבר לפרויקט אחר'; moveBtn.addEventListener('click', () => openMoveTaskModal(task.id)); const editBtn = document.createElement('button'); editBtn.className = 'icon-btn'; editBtn.innerHTML = '✏️'; editBtn.title = 'ערוך משימה'; editBtn.addEventListener('click', () => openEditTaskModal(task)); const deleteBtn = document.createElement('button'); deleteBtn.className = 'icon-btn delete-icon'; deleteBtn.innerHTML = '🗑️'; deleteBtn.title = 'מחק משימה'; deleteBtn.addEventListener('click', () => deleteTask(task.id)); actions.appendChild(moveBtn); actions.appendChild(editBtn); actions.appendChild(deleteBtn); taskElement.appendChild(actions); return taskElement; }
+        // Board Operations
+        function addBoard(title) { const newBoard = { id: generateId(), title, columns: [ { id: generateId(), title: 'לביצוע', tasks: [] }, { id: generateId(), title: 'בתהליך', tasks: [] }, { id: generateId(), title: 'הושלם', tasks: [] } ] }; appState.boards.push(newBoard); appState.activeBoardId = newBoard.id; saveState(); renderBoardTabs(); renderBoard(); }
+        function editBoard(boardId) { const board = appState.boards.find(b => b.id === boardId); if (!board) return; const newTitle = prompt('שם חדש לפרויקט:', board.title); if (newTitle && newTitle.trim()) { board.title = newTitle.trim(); saveState(); renderBoardTabs(); } }
+        function deleteBoard(boardId) { const boardToDelete = appState.boards.find(b => b.id === boardId); if (!boardToDelete) return; if (!confirm(`האם אתה בטוח שברצונך למחוק את הפרויקט "${boardToDelete.title}" וכל תכניו?`)) return; const boardIndex = appState.boards.findIndex(b => b.id === boardId); if (boardIndex === -1) return; appState.boards.splice(boardIndex, 1); if (boardId === appState.activeBoardId) { appState.activeBoardId = appState.boards.length > 0 ? appState.boards[0].id : null; } saveState(); renderBoardTabs(); renderBoard(); }
+        function setActiveBoard(boardId) { if (appState.activeBoardId !== boardId) { appState.activeBoardId = boardId; saveState(); renderBoardTabs(); renderBoard(); } }
+        // Column Operations
+        function addColumn(title) { const activeBoard = appState.boards.find(board => board.id === appState.activeBoardId); if (!activeBoard) return; const newColumn = { id: generateId(), title, tasks: [] }; activeBoard.columns.push(newColumn); saveState(); renderBoard(); }
+        function editColumn(columnId) { const activeBoard = appState.boards.find(board => board.id === appState.activeBoardId); if (!activeBoard) return; const column = activeBoard.columns.find(c => c.id === columnId); if (!column) return; const newTitle = prompt('שם חדש לעמודה:', column.title); if (newTitle && newTitle.trim()) { column.title = newTitle.trim(); saveState(); renderBoard(); } }
+        function deleteColumn(columnId) { const activeBoard = appState.boards.find(board => board.id === appState.activeBoardId); if (!activeBoard) return; const columnToDelete = activeBoard.columns.find(c => c.id === columnId); if (!columnToDelete) return; if (!confirm(`האם אתה בטוח שברצונך למחוק את העמודה "${columnToDelete.title}" וכל המשימות שבה?`)) return; const columnIndex = activeBoard.columns.findIndex(c => c.id === columnId); if (columnIndex === -1) return; activeBoard.columns.splice(columnIndex, 1); saveState(); renderBoard(); }
+        function moveColumn(columnId, targetIndex) { const activeBoard = appState.boards.find(board => board.id === appState.activeBoardId); if (!activeBoard || !activeBoard.columns) return; const fromIndex = activeBoard.columns.findIndex(c => c.id === columnId); if (fromIndex < 0 || fromIndex >= activeBoard.columns.length || targetIndex < 0 || targetIndex > activeBoard.columns.length) { console.error("Invalid indices for column move:", fromIndex, targetIndex); return; } if (fromIndex === targetIndex) return; const [movedColumn] = activeBoard.columns.splice(fromIndex, 1); activeBoard.columns.splice(targetIndex, 0, movedColumn); saveState(); renderBoard(); }
+        // Task Operations
+        function addTask(title, description, statusId, dueDate, dueTime) { const activeBoard = appState.boards.find(board => board.id === appState.activeBoardId); if (!activeBoard || !activeBoard.columns || activeBoard.columns.length === 0) { alert("לא ניתן להוסיף משימה. אנא ודא שקיים פרויקט פעיל עם עמודות."); return; } const newTask = { id: generateId(), title, description, statusId, dueDate: formatDate(dueDate, dueTime)?.toISOString() || null }; if (activeBoard.columns[0] && Array.isArray(activeBoard.columns[0].tasks)) { activeBoard.columns[0].tasks.push(newTask); saveState(); renderBoard(); } else { alert("העמודה הראשונה לא קיימת או פגומה. לא ניתן להוסיף משימה."); if (activeBoard.columns.length === 0) { addColumn("לביצוע"); if (activeBoard.columns[0] && Array.isArray(activeBoard.columns[0].tasks)){ activeBoard.columns[0].tasks.push(newTask); saveState(); renderBoard(); } } } }
+        function updateTask(taskId, columnId, title, description, statusId, dueDate, dueTime) { const activeBoard = appState.boards.find(board => board.id === appState.activeBoardId); if (!activeBoard) return; const column = activeBoard.columns.find(c => c.id === columnId); if (!column || !Array.isArray(column.tasks)) { console.error("Column not found or tasks array missing during task update."); return; } const task = column.tasks.find(t => t.id === taskId); if (!task) { console.error("Task not found during update."); return; } task.title = title; task.description = description; task.statusId = statusId; task.dueDate = formatDate(dueDate, dueTime)?.toISOString() || null; saveState(); renderBoard(); }
+        function deleteTask(taskId) { const activeBoard = appState.boards.find(board => board.id === appState.activeBoardId); if (!activeBoard) return; let taskFound = false; let taskTitle = ''; let columnIndex = -1; let taskIndex = -1; for(let i = 0; i < activeBoard.columns.length; i++) { if (activeBoard.columns[i].tasks) { taskIndex = activeBoard.columns[i].tasks.findIndex(t => t.id === taskId); if (taskIndex !== -1) { taskFound = true; taskTitle = activeBoard.columns[i].tasks[taskIndex].title; columnIndex = i; break; } } } if (!taskFound) return; if (!confirm(`האם אתה בטוח שברצונך למחוק את המשימה "${taskTitle}"?`)) return; activeBoard.columns[columnIndex].tasks.splice(taskIndex, 1); saveState(); renderBoard(); }
+        function reorderOrMoveTask(taskId, sourceColumnId, targetColumnId, targetIndex) { const activeBoard = appState.boards.find(board => board.id === appState.activeBoardId); if (!activeBoard) { console.error("Active board not found for task move/reorder."); return; } const sourceColumn = activeBoard.columns.find(c => c.id === sourceColumnId); const targetColumn = activeBoard.columns.find(c => c.id === targetColumnId); if (!sourceColumn || !Array.isArray(sourceColumn.tasks)) { console.error("Source column not found or invalid:", sourceColumnId); return; } if (!targetColumn || !Array.isArray(targetColumn.tasks)) { console.error("Target column not found or invalid:", targetColumnId); return; } const taskIndexInSource = sourceColumn.tasks.findIndex(t => t.id === taskId); if (taskIndexInSource === -1) { console.error("Task not found in source column:", taskId, sourceColumnId); return; } const [task] = sourceColumn.tasks.splice(taskIndexInSource, 1); let finalTargetIndex = targetIndex; if (finalTargetIndex < 0 || finalTargetIndex > targetColumn.tasks.length) { console.warn(`Calculated targetIndex (${targetIndex}) is out of bounds for target column. Appending to end.`); finalTargetIndex = targetColumn.tasks.length; } targetColumn.tasks.splice(finalTargetIndex, 0, task); saveState(); renderBoard(); }
+        function moveTaskToProject(taskId, sourceBoardId, sourceColumnId, targetBoardId, targetColumnId) { const sourceBoard = appState.boards.find(board => board.id === sourceBoardId); if (!sourceBoard) { console.error("Source board not found for inter-project move."); return; } const sourceColumn = sourceBoard.columns.find(column => column.id === sourceColumnId); if (!sourceColumn || !Array.isArray(sourceColumn.tasks)) { console.error("Source column not found or invalid for inter-project move."); return; } const targetBoard = appState.boards.find(board => board.id === targetBoardId); if (!targetBoard) { console.error("Target board not found for inter-project move."); return; } let targetColumn = targetBoard.columns.find(column => column.id === targetColumnId); if (!targetColumn || !Array.isArray(targetColumn.tasks)) { console.error("Target column not found or invalid for inter-project move."); if (targetBoard.columns.length > 0 && Array.isArray(targetBoard.columns[0].tasks)) { console.warn("Falling back to first column of target board."); targetColumn = targetBoard.columns[0]; } else { alert("עמודת היעד לא תקינה. לא ניתן להעביר את המשימה."); return; } } const taskIndex = sourceColumn.tasks.findIndex(task => task.id === taskId); if (taskIndex === -1) { console.error("Task not found in source column for inter-project move."); return; } const [task] = sourceColumn.tasks.splice(taskIndex, 1); targetColumn.tasks.push(task); saveState(); if (sourceBoardId === appState.activeBoardId) { renderBoard(); } alert(`המשימה "${task.title}" הועברה בהצלחה לפרויקט "${targetBoard.title}".`); }
+        // Status Operations
+        function addStatus(name, color) { const nameExists = appState.customStatuses.some( status => status.name.toLowerCase() === name.toLowerCase() ); if (nameExists) { alert(`סטטוס בשם "${name}" כבר קיים.`); return; } const newStatus = { id: generateId(), name, color }; appState.customStatuses.push(newStatus); saveState(); renderStatusList(); renderStatusOptions(); renderBoard(); }
+        function deleteStatus(statusId) { let statusInUse = false; let usedInTasks = []; for (const board of appState.boards) { for (const column of board.columns) { if (column.tasks) { for (const task of column.tasks) { if (task.statusId === statusId) { statusInUse = true; usedInTasks.push(`"${task.title}" בפרויקט "${board.title}"`); } } } } } if (statusInUse) { alert(`לא ניתן למחוק סטטוס זה. הוא בשימוש במשימות הבאות:\n- ${usedInTasks.slice(0, 5).join('\n- ')}${usedInTasks.length > 5 ? '\n- ...ועוד' : ''}`); return; } const statusToDelete = appState.customStatuses.find(s => s.id === statusId); if (!statusToDelete) return; if (!confirm(`האם אתה בטוח שברצונך למחוק את הסטטוס "${statusToDelete.name}"?`)) return; const statusIndex = appState.customStatuses.findIndex(s => s.id === statusId); if (statusIndex === -1) return; appState.customStatuses.splice(statusIndex, 1); saveState(); renderStatusList(); renderStatusOptions(); }
+        // Modal Functions
+        function openAddColumnModal() { document.getElementById('column-title').value = ''; document.getElementById('add-column-modal').classList.add('active'); document.getElementById('column-title').focus(); }
+        function openAddBoardModal() { document.getElementById('board-title').value = ''; document.getElementById('add-board-modal').classList.add('active'); document.getElementById('board-title').focus(); }
+        function openEditTaskModal(task) { const activeBoard = appState.boards.find(board => board.id === appState.activeBoardId); if (!activeBoard) return; let columnId = null; for (const column of activeBoard.columns) { if (column.tasks && column.tasks.some(t => t.id === task.id)) { columnId = column.id; break; } } if (!columnId) { console.error("Could not find the column for the task to edit."); return; } document.getElementById('edit-task-id').value = task.id; document.getElementById('edit-task-column-id').value = columnId; document.getElementById('edit-task-title').value = task.title; document.getElementById('edit-task-description').value = task.description || ''; document.getElementById('edit-task-status').value = task.statusId; if (task.dueDate) { try { const dueDate = new Date(task.dueDate); if (!isNaN(dueDate)) { const year = dueDate.getFullYear(); const month = String(dueDate.getMonth() + 1).padStart(2, '0'); const day = String(dueDate.getDate()).padStart(2, '0'); document.getElementById('edit-task-due-date').value = `${year}-${month}-${day}`; const hours = String(dueDate.getHours()).padStart(2, '0'); const minutes = String(dueDate.getMinutes()).padStart(2, '0'); document.getElementById('edit-task-due-time').value = `${hours}:${minutes}`; } else { throw new Error("Invalid date string from task.dueDate"); } } catch (e) { console.error("Error parsing task due date:", e); document.getElementById('edit-task-due-date').value = ''; document.getElementById('edit-task-due-time').value = ''; } } else { document.getElementById('edit-task-due-date').value = ''; document.getElementById('edit-task-due-time').value = ''; } document.getElementById('edit-task-modal').classList.add('active'); document.getElementById('edit-task-title').focus(); }
+        function openMoveTaskModal(taskId) { const activeBoard = appState.boards.find(board => board.id === appState.activeBoardId); if (!activeBoard) return; let sourceColumnId = null; let task = null; for (const column of activeBoard.columns) { if (column.tasks) { const foundTask = column.tasks.find(t => t.id === taskId); if (foundTask) { sourceColumnId = column.id; task = foundTask; break; } } } if (!task || !sourceColumnId) { console.error("Could not find task or its source column for moving."); return; } document.getElementById('move-task-id').value = taskId; document.getElementById('move-task-source-board-id').value = activeBoard.id; document.getElementById('move-task-source-column-id').value = sourceColumnId; moveTaskBoardSelect.innerHTML = '<option value="" disabled selected>-- בחר פרויקט --</option>'; appState.boards.forEach(board => { if (board.id !== activeBoard.id) { const option = document.createElement('option'); option.value = board.id; option.textContent = board.title; moveTaskBoardSelect.appendChild(option); } }); if (moveTaskBoardSelect.options.length <= 1) { alert('אין פרויקטים אחרים להעביר אליהם. צור פרויקט חדש קודם.'); return; } moveTaskColumnSelect.innerHTML = '<option value="" disabled selected>-- בחר עמודה --</option>'; moveTaskColumnSelect.disabled = true; moveTaskModal.classList.add('active'); }
+        function updateMoveTaskColumns() { const selectedBoardId = moveTaskBoardSelect.value; moveTaskColumnSelect.innerHTML = '<option value="" disabled selected>-- בחר עמודה --</option>'; if (!selectedBoardId) { moveTaskColumnSelect.disabled = true; return; } const targetBoard = appState.boards.find(board => board.id === selectedBoardId); if (!targetBoard || !targetBoard.columns) { moveTaskColumnSelect.disabled = true; console.error("Target board or its columns not found."); return; } targetBoard.columns.forEach(column => { const option = document.createElement('option'); option.value = column.id; option.textContent = column.title; moveTaskColumnSelect.appendChild(option); }); moveTaskColumnSelect.disabled = false; }
+        function closeModals() { document.querySelectorAll('.modal-overlay.active').forEach(modal => { modal.classList.remove('active'); }); }
+        // Drag and Drop Helper
+        function getDragAfterElement(container, y) { const draggableElements = [...container.querySelectorAll('.task-card:not(.dragging):not(.task-placeholder)')]; return draggableElements.reduce((closest, child) => { const box = child.getBoundingClientRect(); const offset = y - box.top - box.height / 2; if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; } else { return closest; } }, { offset: Number.NEGATIVE_INFINITY }).element; }
+        // Drag and Drop Setup
+        function setupDragAndDrop() { const columns = document.querySelectorAll('.column'); columns.forEach(column => { const header = column.querySelector('.column-header'); if(header) { header.addEventListener('dragstart', handleColumnDragStart); header.addEventListener('dragend', handleColumnDragEnd); header.draggable = true; column.draggable = false; } else { column.addEventListener('dragstart', handleColumnDragStart); column.addEventListener('dragend', handleColumnDragEnd); column.draggable = true; } column.addEventListener('dragover', handleColumnDragOver); column.addEventListener('dragenter', handleColumnDragEnter); column.addEventListener('dragleave', handleColumnDragLeave); column.addEventListener('drop', handleColumnDrop); }); const taskCards = document.querySelectorAll('.task-card'); taskCards.forEach(task => { task.addEventListener('dragstart', handleTaskDragStart); task.addEventListener('dragend', handleTaskDragEnd); }); const tasksContainers = document.querySelectorAll('.tasks-container'); tasksContainers.forEach(container => { container.addEventListener('dragover', handleTaskContainerDragOver); container.addEventListener('dragenter', handleTaskContainerDragEnter); container.addEventListener('dragleave', handleTaskContainerDragLeave); container.addEventListener('drop', handleTaskContainerDrop); }); }
+        // Drag and Drop Handlers (Column)
+        function handleColumnDragStart(e) { draggedColumn = this.closest('.column'); if (!draggedColumn) return; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', 'column-drag'); e.dataTransfer.setData('columnId', draggedColumn.dataset.columnId); columnPlaceholder = document.createElement('div'); columnPlaceholder.className = 'column-placeholder'; columnPlaceholder.style.height = `${draggedColumn.offsetHeight}px`; columnPlaceholder.style.minWidth = `${draggedColumn.offsetWidth}px`; columnPlaceholder.style.width = `${draggedColumn.offsetWidth}px`; setTimeout(() => { if (draggedColumn) { draggedColumn.style.opacity = '0.4'; draggedColumn.parentNode.insertBefore(columnPlaceholder, draggedColumn); } }, 0); }
+        function handleColumnDragEnd(e) { if (draggedColumn) { draggedColumn.style.opacity = '1'; } if (columnPlaceholder && columnPlaceholder.parentNode) { columnPlaceholder.parentNode.removeChild(columnPlaceholder); } draggedColumn = null; columnPlaceholder = null; document.querySelectorAll('.column.over').forEach(col => col.classList.remove('over')); }
+        function handleColumnDragOver(e) { e.preventDefault(); if (!draggedColumn) return false; e.dataTransfer.dropEffect = 'move'; const targetColumn = this.closest('.column'); if (!targetColumn || targetColumn === draggedColumn || targetColumn === columnPlaceholder) return; const targetRect = targetColumn.getBoundingClientRect(); const targetCenterX = targetRect.left + targetRect.width / 2; const parent = targetColumn.parentNode; if (e.clientX < targetCenterX) { parent.insertBefore(columnPlaceholder, targetColumn); } else { parent.insertBefore(columnPlaceholder, targetColumn.nextSibling); } return false; }
+        function handleColumnDragEnter(e) { e.preventDefault(); }
+        function handleColumnDragLeave(e) { }
+        function handleColumnDrop(e) { e.preventDefault(); e.stopPropagation(); if (!draggedColumn || this === columnPlaceholder) return false; const targetColumn = this.closest('.column'); if (!targetColumn || draggedColumn === targetColumn) return false; const placeholderIndex = Array.from(boardsContainer.children).indexOf(columnPlaceholder); const columnIdToMove = draggedColumn.dataset.columnId; moveColumn(columnIdToMove, placeholderIndex); return false; }
+        // Drag and Drop Handlers (Task)
+        function handleTaskDragStart(e) { draggedTask = this; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', 'task-drag'); e.dataTransfer.setData('taskId', this.dataset.taskId); const sourceContainer = this.closest('.tasks-container'); if (sourceContainer) { e.dataTransfer.setData('sourceColumnId', sourceContainer.dataset.columnId); } else { console.error("Could not find source column for dragged task!"); e.preventDefault(); return; } setTimeout(() => { if (draggedTask) { draggedTask.classList.add('dragging'); } }, 0); }
+        function handleTaskDragEnd() { if (draggedTask) { draggedTask.classList.remove('dragging'); } if (taskPlaceholder && taskPlaceholder.parentNode) { taskPlaceholder.parentNode.removeChild(taskPlaceholder); } draggedTask = null; taskPlaceholder = null; document.querySelectorAll('.tasks-container.drag-over').forEach(container => { container.classList.remove('drag-over'); }); }
+        function handleTaskContainerDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; if (!draggedTask) return false; const container = this; container.classList.add('drag-over'); if (!taskPlaceholder) { taskPlaceholder = document.createElement('div'); taskPlaceholder.className = 'task-placeholder'; } taskPlaceholder.style.height = `${draggedTask.offsetHeight}px`; const afterElement = getDragAfterElement(container, e.clientY); if (afterElement == null) { container.appendChild(taskPlaceholder); } else { container.insertBefore(taskPlaceholder, afterElement); } return false; }
+        function handleTaskContainerDragEnter(e) { e.preventDefault(); if (draggedTask) { this.classList.add('drag-over'); } }
+        function handleTaskContainerDragLeave(e) { const rect = this.getBoundingClientRect(); if ( e.clientX <= rect.left || e.clientX >= rect.right || e.clientY <= rect.top || e.clientY >= rect.bottom ) { this.classList.remove('drag-over'); if (taskPlaceholder && taskPlaceholder.parentNode === this) { this.removeChild(taskPlaceholder); } } }
+        function handleTaskContainerDrop(e) { e.preventDefault(); e.stopPropagation(); this.classList.remove('drag-over'); if (!draggedTask) { console.warn("Drop event occurred without a dragged task."); return false; } const taskId = e.dataTransfer.getData('taskId'); const sourceColumnId = e.dataTransfer.getData('sourceColumnId'); const targetColumnId = this.dataset.columnId; if (!taskId || !sourceColumnId || !targetColumnId) { console.error("Missing drag data for task drop. Aborting.", { taskId, sourceColumnId, targetColumnId }); if (taskPlaceholder && taskPlaceholder.parentNode) taskPlaceholder.parentNode.removeChild(taskPlaceholder); taskPlaceholder = null; if (draggedTask) draggedTask.classList.remove('dragging'); draggedTask = null; return false; } let targetIndex = -1; if (taskPlaceholder && taskPlaceholder.parentNode === this) { const childrenIncludingPlaceholder = Array.from(this.children); targetIndex = childrenIncludingPlaceholder.indexOf(taskPlaceholder); this.removeChild(taskPlaceholder); taskPlaceholder = null; } else { console.warn("Task placeholder not found in target container during drop. Calculating index from drop position."); const afterElement = getDragAfterElement(this, e.clientY); const actualTasks = Array.from(this.querySelectorAll('.task-card:not(.dragging)')); if (afterElement) { targetIndex = actualTasks.indexOf(afterElement); } else { targetIndex = actualTasks.length; } if (taskPlaceholder && taskPlaceholder.parentNode) taskPlaceholder.parentNode.removeChild(taskPlaceholder); taskPlaceholder = null; } reorderOrMoveTask(taskId, sourceColumnId, targetColumnId, targetIndex); return false; }
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState(); renderStatusList(); renderStatusOptions(); renderBoardTabs(); renderBoard();
+            // Form Submissions
+            addTaskForm.addEventListener('submit', (e) => { e.preventDefault(); const title = document.getElementById('task-title').value.trim(); const description = document.getElementById('task-description').value.trim(); const statusId = document.getElementById('task-status').value; const dueDate = document.getElementById('task-due-date').value; const dueTime = document.getElementById('task-due-time').value; if (title && statusId) { addTask(title, description, statusId, dueDate, dueTime); addTaskForm.reset(); document.getElementById('task-status').value = ""; } else if (!title){ alert("אנא הזן כותרת למשימה."); } else { alert("אנא בחר סטטוס למשימה."); } });
+            addStatusForm.addEventListener('submit', (e) => { e.preventDefault(); const name = document.getElementById('status-name').value.trim(); const color = document.getElementById('status-color').value; if (name) { addStatus(name, color); addStatusForm.reset(); document.getElementById('status-color').value = '#3498db'; } else { alert("אנא הזן שם לסטטוס."); } });
+            // Modal Buttons
+            addColumnSubmit.addEventListener('click', () => { const title = document.getElementById('column-title').value.trim(); if (title) { addColumn(title); closeModals(); } else { alert("אנא הזן כותרת לעמודה."); } });
+            addBoardBtn.addEventListener('click', openAddBoardModal);
+            addBoardSubmit.addEventListener('click', () => { const title = document.getElementById('board-title').value.trim(); if (title) { addBoard(title); closeModals(); } else { alert("אנא הזן שם לפרויקט."); } });
+            editTaskSubmit.addEventListener('click', () => { const taskId = document.getElementById('edit-task-id').value; const columnId = document.getElementById('edit-task-column-id').value; const title = document.getElementById('edit-task-title').value.trim(); const description = document.getElementById('edit-task-description').value.trim(); const statusId = document.getElementById('edit-task-status').value; const dueDate = document.getElementById('edit-task-due-date').value; const dueTime = document.getElementById('edit-task-due-time').value; if (title && statusId && taskId && columnId) { updateTask(taskId, columnId, title, description, statusId, dueDate, dueTime); closeModals(); } else { alert("שדות חסרים או לא תקינים. אנא בדוק את הכותרת והסטטוס."); } });
+            moveTaskBoardSelect.addEventListener('change', updateMoveTaskColumns);
+            moveTaskSubmit.addEventListener('click', () => { const taskId = document.getElementById('move-task-id').value; const sourceBoardId = document.getElementById('move-task-source-board-id').value; const sourceColumnId = document.getElementById('move-task-source-column-id').value; const targetBoardId = moveTaskBoardSelect.value; const targetColumnId = moveTaskColumnSelect.value; if (taskId && sourceBoardId && sourceColumnId && targetBoardId && targetColumnId) { moveTaskToProject(taskId, sourceBoardId, sourceColumnId, targetBoardId, targetColumnId); closeModals(); } else { alert("אנא בחר פרויקט ועמודת יעד."); } });
+            // Modal Closing
+            document.querySelectorAll('.modal-close').forEach(button => { button.addEventListener('click', closeModals); });
+            document.querySelectorAll('.modal-overlay').forEach(modal => { modal.addEventListener('click', (e) => { if (e.target === modal) { closeModals(); } }); });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeModals(); } });
+            // Periodic Updates
+            setInterval(() => { const activeBoard = appState.boards.find(board => board.id === appState.activeBoardId); if (!activeBoard) return; document.querySelectorAll('.task-card').forEach(taskCard => { const taskId = taskCard.dataset.taskId; let task = null; for (const column of activeBoard.columns) { if (column.tasks) { task = column.tasks.find(t => t.id === taskId); if (task) break; } } if (task && task.dueDate) { const countdownElement = taskCard.querySelector('.task-countdown'); const dueElement = taskCard.querySelector('.task-due'); if (countdownElement) { const countdown = calculateCountdown(task.dueDate); if (countdown) { countdownElement.textContent = countdown.text; countdownElement.classList.toggle('countdown-expired', countdown.expired); taskCard.classList.toggle('due-alarm', countdown.expired); } else { countdownElement.textContent = ''; countdownElement.classList.remove('countdown-expired'); taskCard.classList.remove('due-alarm'); } } if (dueElement) { dueElement.textContent = `יעד: ${formatDateForDisplay(task.dueDate)}`; } } else { taskCard.classList.remove('due-alarm'); const countdownElement = taskCard.querySelector('.task-countdown'); if(countdownElement) countdownElement.textContent = ''; const dueElement = taskCard.querySelector('.task-due'); if(dueElement) dueElement.textContent = ''; } }); }, 60000);
+        });
+    </script>
+</body>
+</html>
